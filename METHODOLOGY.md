@@ -24,7 +24,7 @@ rationale feedback from Track B.
 
 ### 1.2 Portfolio B — Human Overlay
 
-The same specialist agents produce the same analysis. The human (acting as
+The same specialist agent produces the same analysis. The human (acting as
 Investment Committee) receives agent output as an IC pre-read, challenges
 the thesis, and approves, modifies, or rejects. Override reasons are logged
 at entry time — never retrospectively.
@@ -49,45 +49,76 @@ substance.
 
 ## 2. Universe
 
-### 2.1 Markets
+### 2.1 Scope
+
+The platform analyses and trades listed REIT equities across four APAC
+markets. Credit instruments (REIT bonds, perpetual securities) are excluded
+due to insufficient publicly traded instruments with free price data in
+APAC markets. This scope decision may be revisited in future phases if
+market conditions change, with any change logged as a new commit.
+
+### 2.2 Markets
 
 - Japan (TSE-listed J-REITs)
 - Singapore (SGX-listed S-REITs)
 - Hong Kong (HKEX-listed HK-REITs)
 - Australia (ASX-listed A-REITs)
 
-### 2.2 Instrument Types
+### 2.3 Instrument Types
 
-- Listed REITs (equity)
-- Listed REIT bonds and credit instruments (where available and liquid)
+| Instrument Type | What Qualifies | Markets |
+|---|---|---|
+| listed_reit | Standard REIT equity listed under local REIT regulation | Singapore, Japan, Hong Kong, Australia |
+| stapled_security | Trust stapled to operating company, trading as one unit | Australia only |
 
-### 2.3 Inclusion Criteria
+### 2.4 Sector Classification
 
-To be finalised in Phase 1 when the universe is constructed. Criteria will
-include:
+| Sector | What Qualifies |
+|---|---|
+| Office | Primarily office buildings |
+| Retail | Shopping centres, malls |
+| Industrial / Logistics | Warehouses, business parks, supply chain |
+| Data Centre | Data centre facilities |
+| Hospitality | Hotels, serviced residences |
+| Healthcare | Hospitals, nursing homes, medical offices |
+| Residential | Apartments, housing |
+| Diversified | Multiple property types (classify here if no dominant sector) |
 
-- Minimum market capitalisation (threshold TBC)
-- Minimum average daily trading volume (threshold TBC)
-- Must be classified as a REIT or REIT-equivalent structure under local
-  regulation (MAS for Singapore, SFC for Hong Kong, J-REIT Act for Japan,
+### 2.5 Inclusion Criteria
+
+Each REIT in the universe must meet all of the following:
+
+- Listed on SGX, TSE, HKEX, or ASX
+- Classified as a REIT or REIT-equivalent under local regulation
+  (MAS for Singapore, FSA/MLIT for Japan, SFC for Hong Kong,
   ASIC for Australia)
-- Minimum 12 months trading history
+- Minimum market capitalisation: USD 500M equivalent (at spot FX
+  on assessment date)
+- Minimum average daily trading volume: USD 1M equivalent (trailing
+  60 trading days)
+- Minimum 12 months continuous trading history
+- Not currently suspended, under active takeover, or in delisting
+  proceedings
 
-### 2.4 Exclusion Criteria
+The USD 500M and USD 1M thresholds are initial settings. They may be
+adjusted after the first quarterly review based on the number of
+qualifying REITs and liquidity experience, with adjustments logged
+as a new commit.
+
+### 2.6 Exclusion Criteria
 
 - Suspended securities
 - REITs under active takeover or delisting proceedings
 - Instruments with insufficient liquidity for the simulated position size
+- Business trusts that do not qualify as REITs under local regulation
 
-### 2.5 Universe Maintenance
+### 2.7 Universe Maintenance
 
-The universe is fixed for the duration of the experiment. New listings that
-meet inclusion criteria are added at the next quarterly review. Delistings
-are removed and positions are exited at the last available price. Expansion
-to new markets or asset classes is a separate future experiment.
-
-The specific ticker list is committed as a separate file (universe.csv)
-when Phase 1 completes.
+The universe is fixed for the duration between quarterly reviews. New
+listings that meet inclusion criteria are added at the next quarterly
+review. Delistings are removed and positions are exited at the last
+available price. The specific ticker list is committed as a separate
+file (universe.csv) alongside this document.
 
 ---
 
@@ -100,16 +131,12 @@ numbers.
 
 ### 3.1 Monte Carlo Simulation
 
-For each investment thesis, the specialist agents define input variables
-with probability distributions rather than single point estimates:
+For each investment thesis, the specialist agent defines input variables
+with probability distributions rather than single point estimates.
 
-**Equity inputs:** rental growth rate, vacancy rate, cap rate movement,
+Inputs include: rental growth rate, vacancy rate, cap rate movement,
 DPU growth trajectory, lease renewal probability, sponsor support
 assumptions, FX movement.
-
-**Credit inputs:** refinancing cost, interest rate trajectory, covenant
-headroom under stress, rating migration probability, recovery rate
-assumptions.
 
 Each input is assigned a distribution (normal, triangular, or uniform as
 appropriate) with defined parameters. The simulation runs 10,000 scenarios
@@ -124,16 +151,16 @@ The input assumptions for every position are logged in the memo and are
 reproducible. Anyone can re-run the simulation with the same inputs and
 verify the outputs.
 
-#### 3.1.2 Input Classification
+### 3.2 Input Classification
 
 Every Monte Carlo input is classified into one of three categories. The
 classification is disclosed in each memo so that anyone reviewing the
 analysis can assess the reliability of the simulation outputs.
 
-##### Category A — Observed Data
+#### Category A — Observed Data
 
 Inputs derived directly from public disclosures or market data with no
-modelling assumptions. These are verifiable by any third party.
+modelling assumptions. Verifiable by any third party.
 
 - DPU history and declared distributions (REIT filings)
 - Reported occupancy rates (REIT filings and quarterly updates)
@@ -145,35 +172,29 @@ modelling assumptions. These are verifiable by any third party.
 - Risk-free rate (FRED DTB3)
 - Central bank policy rates (MAS, BoJ, HKMA, RBA)
 - FX spot rates (yfinance)
-- Current credit ratings (public, from rating agencies)
-- Cap rates implied from reported NOI and property valuations (annual reports)
+- Cap rates implied from reported NOI and property valuations
 
 #### Category B — Derived Estimates
 
 Inputs calculated from observed data using defined, reproducible methods.
 The derivation method is disclosed in the memo.
 
-- Rental reversion estimates (calculated from disclosed passing rents
-  and available market rent comparables)
-- Covenant headroom under stress (covenants from filings, stress
-  assumptions defined by the analyst and disclosed)
-- Unencumbered asset ratios (calculable from balance sheet data)
+- Rental reversion estimates (from disclosed passing rents and
+  available market rent comparables)
+- Unencumbered asset ratios (from balance sheet data)
 - Beta estimation period and method (e.g. 2-year weekly returns
   regressed against benchmark)
-- Vacancy rate trends (extrapolated from historical reported data
-  using disclosed method)
-- Rental growth trajectory (extrapolated from historical data or
-  derived from REIT management guidance in public presentations)
-- Implied default probability (derived from financial metrics using
-  disclosed model, e.g. Altman Z-score adapted for REITs)
+- Vacancy rate trends (extrapolated from historical reported data)
+- Rental growth trajectory (from historical data or REIT management
+  guidance in public presentations)
 
-##### Category C — Model Assumptions
+#### Category C — Model Assumptions
 
 Inputs that require judgment and cannot be derived mechanically from
-public data. These are the primary source of model uncertainty. Each
-Category C input must state:
+public data. The primary source of model uncertainty. Each Category C
+input must state:
 
-- The specific assumption (e.g. "rental growth of 3% p.a. for years 1–3")
+- The specific assumption (e.g. "rental growth of 3% p.a. for years 1-3")
 - The basis for the assumption (e.g. "5-year historical average for
   Singapore CBD office was 2.8%; URA planning pipeline suggests
   tightening supply")
@@ -186,12 +207,10 @@ Category C inputs include:
 - Future vacancy rate distributions
 - Cap rate movement assumptions
 - Sponsor support probability
-- Recovery rate assumptions in default scenarios
-- Rating migration probability distributions
 - Development pipeline cost variance
 - FX movement distributions beyond spot
 
-##### Classification Rules
+#### Classification Rules
 
 - Every Monte Carlo input in every memo is tagged as A, B, or C
 - Category A inputs are not debatable — they are what the filings say
@@ -200,20 +219,15 @@ Category C inputs include:
 - Category C inputs are where analytical judgment lives — and where
   Track A and Track B may legitimately diverge
 - A memo with a high proportion of Category C inputs should carry
-  lower conviction than one driven primarily by Category A and B
-  inputs, all else being equal. This is captured in the qualitative
-  gates (Section 4.2).
+  lower conviction, captured via the qualitative gates (Section 4.2)
 
-### 3.2 PGain — Probability of Positive Return
+### 3.3 PGain — Probability of Positive Return
 
 PGain is the probability that the investment returns more than the capital
 invested. It is calculated from the Monte Carlo outputs assuming a normal
 distribution of returns:
-
-
 Z-Score = -E(R) / St.Dev
 PGain   = 1 - Φ(Z-Score)
-
 
 Where Φ is the cumulative normal distribution function.
 
@@ -228,14 +242,11 @@ Example: E(R) = 21%, St.Dev = 20%.
 Z-Score = -0.21 / 0.20 = -1.05.
 PGain = 85.3%.
 
-### 3.3 CAPM — Required Return Benchmark
+### 3.4 CAPM — Required Return Benchmark
 
 The Capital Asset Pricing Model provides the minimum return the market
 demands for bearing systematic risk:
-
-
 Required Return = Rf + β × (Rm - Rf)
-
 
 Where:
 - Rf = risk-free rate (3-month US T-bill, FRED series DTB3)
@@ -245,15 +256,16 @@ Where:
 **CAPM alpha** = E(R) from Monte Carlo minus CAPM required return.
 
 A positive CAPM alpha indicates the expected return exceeds what the market
-demands for the risk. A negative CAPM alpha does not automatically disqualify
-a position but is flagged in the memo and may reduce conviction.
+demands for the risk. A negative CAPM alpha does not automatically
+disqualify a position but is flagged in the memo and may reduce conviction.
 
-### 3.4 How the Three Layers Interact
+### 3.5 How the Three Layers Interact
 
-1. Specialist agents define input assumptions and run Monte Carlo. Each input is classified as Category A, B, or C
+1. Specialist agent defines input assumptions with distributions
+1a. Each input is classified as Category A, B, or C
 2. Monte Carlo produces E(R) and St.Dev
 3. PGain is calculated from E(R) and St.Dev
-4. CAPM required return is calculated from the risk-free rate and REIT beta
+4. CAPM required return is calculated from risk-free rate and REIT beta
 5. CAPM alpha = E(R) minus required return
 6. PGain maps to the conviction table (Section 4)
 7. Qualitative gates can override conviction downward but never upward
@@ -286,17 +298,15 @@ model. These include:
   government policy shifts that are not continuous variables
 - **Unmodelled correlation:** REIT exposure to a factor not captured in
   the simulation inputs
-- **Data quality concern:** key input assumption relies on stale, incomplete,
-  or unreliable data
-- **Liquidity risk:** the position size relative to average daily volume
-  creates execution risk beyond the 25bps cost assumption
+- **Data quality concern:** key input assumption relies on stale,
+  incomplete, or unreliable data
 - **Input quality concern:** memo relies heavily on Category C assumptions
   with limited Category A/B anchoring
+- **Liquidity risk:** the position size relative to average daily volume
+  creates execution risk beyond the 25bps cost assumption
 
-A qualitative gate can only push conviction downward. For example:
-Monte Carlo produces PGain of 80% (implying conviction 4), but a pending
-regulatory review creates binary risk the model cannot capture. Conviction
-is reduced to 3. The memo must state which gate was applied and why.
+A qualitative gate can only push conviction downward. The memo must state
+which gate was applied and why.
 
 ### 4.3 Conviction Overrides (Track B Only)
 
@@ -429,16 +439,16 @@ Each investment thesis produces two memos committed to GitHub before any
 position is logged:
 
 **Memo A:** unedited GP agent output in IC pre-read format. Contains:
-thesis, key data, Monte Carlo inputs and outputs, PGain, CAPM comparison,
-conviction score, invalidation signal, position sizing recommendation.
+thesis, key data, Monte Carlo inputs and outputs (with Category A/B/C
+classification for each input), PGain, CAPM comparison, conviction score,
+invalidation signal, position sizing recommendation.
 
 **Memo B:** human overlay. Contains: where you agree with Memo A, where
 you diverge and why, context the platform lacks, your conviction score
 (which may differ from Memo A for Track B).
 
 **Comparison section:** scores both memos on: analytical rigour, data
-breadth, contextual judgment, tail risk identification, quantitative
-model appropriateness.
+breadth, contextual judgment, tail risk identification.
 
 ### 7.3 Substack Publication
 
@@ -465,10 +475,14 @@ at entry, it does not exist for evaluation purposes.
 
 Each override is categorised at entry time:
 
-- **Timing disagreement:** agree with thesis direction but disagree on entry timing
-- **Conviction adjustment:** agree with thesis but assess probability differently
-- **Additional context:** information available to the human that the platform lacks
-- **Risk not captured:** tail risk or binary event the quantitative model does not address
+- **Timing disagreement:** agree with thesis direction but disagree on
+  entry timing
+- **Conviction adjustment:** agree with thesis but assess probability
+  differently
+- **Additional context:** information available to the human that the
+  platform lacks
+- **Risk not captured:** tail risk or binary event the quantitative model
+  does not address
 - **Thesis rejection:** fundamental disagreement with the investment thesis
 
 ### 8.4 Override Analysis
@@ -529,6 +543,14 @@ against actual outcomes. Identifies systematic biases: does the agent
 consistently overestimate or underestimate confidence in specific markets,
 sectors, or conditions?
 
+### 9.8 Track B Operational Metrics
+
+- IC timeout rate: percentage of GP recommendations that expired without
+  a Track B decision within the 24-hour window
+- Price-stale entry rate: percentage of Track B entries flagged as
+  price-stale (>3% movement between recommendation and approval)
+- Response time distribution: how quickly does the human typically respond?
+
 ---
 
 ## 10. Audit Trail Integrity
@@ -555,12 +577,12 @@ sectors, or conditions?
 
 Simulation module implemented in Python using scipy and numpy. 10,000
 iterations per position. Input distributions and parameters are logged
-with each memo. The module is called as a shared function by both
-specialist agents.
+with each memo. The module is called as a shared function by the
+specialist agent.
 
 ### A.2 PGain Implementation
 
-python
+```python
 from scipy.stats import norm
 
 def calculate_pgain(expected_return: float, std_dev: float) -> float:
@@ -569,16 +591,16 @@ def calculate_pgain(expected_return: float, std_dev: float) -> float:
         return 1.0 if expected_return > 0 else 0.0
     z_score = -expected_return / std_dev
     return 1 - norm.cdf(z_score)
-
+```
 
 ### A.3 CAPM Implementation
 
-python
+```python
 def calculate_capm_return(risk_free: float, beta: float,
                           market_return: float) -> float:
     """CAPM required return."""
     return risk_free + beta * (market_return - risk_free)
-
+```
 
 ### A.4 Data Sources
 
