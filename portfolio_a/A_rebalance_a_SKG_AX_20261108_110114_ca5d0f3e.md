@@ -1,0 +1,23 @@
+# Track A Decision — SKG.AX
+
+**Decision ID**: `A_rebalance_a_SKG_AX_20261108_110114_ca5d0f3e`
+**Flow context**: rebalance_a
+**Decided at**: 2026-11-08T11:01:14.425599+00:00
+**Decided by**: gp
+**Rebalance run**: `rebal_a_2026-11-08`
+
+## Action
+
+- **Action**: `hold`
+
+## Reasoning
+
+**Reason class**: `hold_thesis_intact`
+
+The position is up 6.2% in local terms at a 3.13% weight. The thesis is performing and nothing indicates decay. Hold.
+
+## Post-Decision Exposures
+
+- Total invested: 93.49%
+- Country: `{"Australia": 31.19, "Singapore": 33.01, "HongKong": 8.66, "Japan": 20.64}`
+- Sector: `{"Diversified": 26.78, "Healthcare": 3.48, "Data Centre": 3.04, "Industrial/Logistics": 23.62, "Retail": 19.46, "Residential": 10.22, "Hospitality": 5.9, "Office": 0.98}`
