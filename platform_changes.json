@@ -1,0 +1,55 @@
+[
+  {
+    "date": "2026-08-05",
+    "title": "Japan trading unit corrected to one unit",
+    "summary": "J-REITs trade in single units; the platform had assumed lots of 100. Positions in Japan can now be sized and trimmed in steps of about 0.02% of NAV instead of about 0.8%.",
+    "tracks": [
+      "A",
+      "B"
+    ]
+  },
+  {
+    "date": "2026-08-10",
+    "title": "Purchases and sales netted within each Track A cycle",
+    "summary": "Until this date a Track A cycle could buy a position and sell it again in the same run when the purchase took the portfolio over a cap. Each cycle's purchases and sales are now netted before anything trades. This ended same-day round trips. It did not change how cap breaches are resolved, and sales forced by caps continued.",
+    "tracks": [
+      "A"
+    ],
+    "split_activity": true
+  },
+  {
+    "date": "2026-08-30",
+    "title": "Track A weekly portfolio review restored",
+    "summary": "The weekly review returned no decisions on 16 and 23 August because its response was cut short, and the run reported success. The limit was raised. From this date the review can again propose sales on investment grounds.",
+    "tracks": [
+      "A"
+    ]
+  },
+  {
+    "date": "2026-09-03",
+    "title": "Seven-day minimum between memos on the same name",
+    "summary": "A new filing could trigger a fresh memo on a name every day, which crowded other names out of the memo flow. A name is now eligible for a new memo no sooner than seven days after its last.",
+    "tracks": [
+      "A",
+      "B"
+    ]
+  },
+  {
+    "date": "2026-10-11",
+    "title": "Language model changed",
+    "summary": "The model behind the specialist, reviewer and Track A agents changed from Claude Sonnet 4.6 to Claude Sonnet 5.5. Decisions from this date were made on the new model.",
+    "tracks": [
+      "A",
+      "B"
+    ]
+  },
+  {
+    "date": "2026-11-21",
+    "title": "Quarterly reporting rebuilt",
+    "summary": "The quarterly report generator was rebuilt after the first run on 14 October produced figures that were wrong or not comparable. Results are now measured on NAV at the period end, against a total-return benchmark, and a closed quarter gives the same figures whenever it is run. The 14 October version of the 2026Q3 report is withdrawn and replaced by this one; it remains in the repository history.",
+    "tracks": [
+      "A",
+      "B"
+    ]
+  }
+]

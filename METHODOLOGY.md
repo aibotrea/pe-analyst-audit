@@ -542,6 +542,11 @@ prioritisation follows the trigger order above. Surplus rolls to the
 following day. The 21-day held ceiling ensures the rebalance flows
 always operate on a recent thesis view.
 
+**Minimum interval.** From 3 September 2026 a name is not eligible for a
+new memo until seven days after its last, whichever trigger applies.
+Before that date a new filing could trigger a fresh memo on the same name
+on consecutive days, which crowded other names out of the daily cap.
+
 ### 7.3  Memo Distribution
 
 Each generated memo passes the two-layer reviewer (mechanical then
@@ -609,8 +614,12 @@ unspecified ticker:
 |---|---|
 | Singapore | 100 |
 | HongKong | 1000 |
-| Japan | 100 |
+| Japan | 1 |
 | Australia | 1 |
+
+The Japan default was 100 until 5 August 2026. J-REIT investment units
+trade singly, so the default was corrected to 1 from that date. Positions
+sized before it were rounded to lots of 100.
 
 ### 8.4  Price Capture
 
@@ -862,6 +871,7 @@ Repository structure:
 ```
 METHODOLOGY.md              this file
 README.md                   repository title
+platform_changes.json       Dated changes to platform behaviour (§11.4)
 memos/                      Specialist memo history (twin format: A and B)
 outcomes/                   Quarterly scoring with attribution
 portfolio_a/                Track A position memos and outcomes
@@ -920,19 +930,32 @@ none is planned; the operator reviews every post before it goes out. The
 absence of automation here is not a gap — it is the point at which a
 human is required to stand behind what is published.
 
-Each quarterly cycle writes three artefacts to the audit repository under
+Each quarterly cycle writes its artefacts to the audit repository under
 `outcomes/{quarter_id}/`:
 
 - `report.json` — machine-readable canonical record of every decision in
-  the period and every computed metric.
-- `report.md` — human-readable summary.
+  the period and every computed metric. Every figure in the other
+  artefacts is taken from this file.
+- `report.md` — the full review, with tables.
 - `substack_draft.md` — operator-editable draft of the public post.
+- `tables/` — the post's tables as images, because the Substack editor
+  has no tables.
+- `commentary.md` — optional. The operator's account of the themes of the
+  quarter, carried into both rendered files under that heading.
+
+Dated changes to platform behaviour are recorded in
+`platform_changes.json` at the repository root. Each quarterly report
+lists the changes that fall inside its period and those made between the
+period end and the run date.
 
 The quarterly post carries, subject to operator judgement at publication
-time: the headline (total return in USD, excess return against the
-benchmark on both currency bases, position count); a prose account of the
-period; PGain calibration against baseline; override patterns and their
-outcomes; the cap-breach summary; and a link to this methodology.
+time: the headline (each track's total return in USD, the benchmark on
+both currency bases, and each track's return against the benchmark); the
+themes of the quarter; the market over the period; how each track
+invested; what drove the result; the comparison of the two tracks
+(§13.4); PGain calibration (§13.3); platform changes; the position since
+the period end; and a link to this methodology. The cap-breach audit
+(§13.5) is published in `report.json`.
 
 ### 11.5  Methodology Amendments
 
@@ -989,6 +1012,19 @@ permitted under §11.5.
 
 ## 13  Calibration and Review Cadence
 
+*Amended 21 November 2026.* §11.4 and §13.1 to §13.6 were revised when the
+quarterly reporting was rebuilt. The first 2026Q3 report, committed to
+this repository on 14 October 2026, was produced under the previous text.
+It contained figures that were wrong or not comparable and is withdrawn,
+and it has been replaced by a report produced under this text. Both
+versions of the report, and of this section, remain in the repository
+history.
+
+The same amendment brings three statements of fact into line with changes
+already made to the platform and recorded in `platform_changes.json`: the
+minimum interval between memos (§7.2), the Japan trading unit (§8.3) and
+the default model (§13.8).
+
 ### 13.1  Quarterly Review
 
 **Quarter definition.** Quarters follow the calendar: Q1 (Jan–Mar), Q2
@@ -1004,74 +1040,116 @@ at its first review. Thin-sample metrics are caveated, not suppressed
 
 The review covers the following.
 
-**Per-position outcomes.** Each closed position receives one of three
-outcome classifications:
+**Measurement date.** Every figure for a period is measured at the period
+end: holdings as they stood at the close of the period's last day, valued
+at that day's closing prices and FX rates (§1.3). Past holdings are
+rebuilt from the portfolio snapshot stored with every decision, so a
+closed quarter gives the same figures whenever the review is run. A
+decision belongs to the period that contains the UTC date on which it was
+made.
 
-- *Confirmed.* The thesis played out as described in the memo.
-- *Invalidated.* The thesis invalidation signal was triggered, or the
-  thesis was proven incorrect by events.
-- *Inconclusive.* The position was exited for reasons unrelated to the
-  original thesis (e.g. rebalance, universe change, delisting).
+**Windows.** Two are reported: the quarter, measured from the previous
+period-end NAV (from the capital base at inception for the first
+quarter), and since inception. Returns are not annualised. The position
+between the period end and the run date is reported separately, marked as
+outside the period result, and restated in the next report.
 
-**Return measurement.** For each closed position and at the portfolio
-level:
-
-- Gross return (entry price to exit price).
-- Net return (gross minus the 25bps entry + 25bps exit costs).
-- Local-currency return.
-- USD return, translated at point-in-time rates (§1.3).
+**Portfolio return.** Return is the change in NAV (§8.5) over the window,
+net of the costs of §1.4. Neither track takes subscriptions or
+redemptions, so the change in NAV is the return. It is decomposed into
+realised P&L, unrealised P&L, distributions received and interest on idle
+cash.
 
 **Track comparison.** Both tracks are compared against the benchmark on
 the dual-basis, total-return convention of §8.7, net of costs; and against
 each other, which is the measure of the operator's value-add or
-value-detract.
+value-detract (§13.4).
 
-**Quantitative model assessment.**
+**Per-position outcomes.** Each position opened in the period is reported
+at the period end with its cost, its P&L after costs and including
+distributions, and its disposition (§13.2). P&L is attributed by market,
+by sector and by disposition. Position returns are in USD at point-in-time
+rates (§1.3). Gross-of-cost and local-currency returns are not reported
+per position.
 
-- PGain calibration by decile — see §13.3.
-- Monte Carlo accuracy: how realised returns compared to the simulated
-  distribution; whether input distributions were reasonable in hindsight.
-- CAPM alpha realisation: whether positions entered with positive CAPM
-  alpha outperformed those without.
+*Future enhancement.* The review does not yet classify a closed position's
+thesis as confirmed, invalidated or inconclusive. That needs a judgement
+on each memo's thesis which the review does not make; `disposition`
+records how the position ended instead.
 
-**Track B operational metrics.**
+**How each track invested.** Memos decided and bought; turnover (the
+lesser of purchases and sales, divided by the average of opening and
+closing NAV, not annualised); transaction charges as a share of opening
+NAV; the holding period of positions sold; the number of positions in
+profit and the average gain and loss; and concentration and cash at the
+period end.
 
-- `no_action_timeout` rate — share of memos that expired in queue
-  without an IC decision.
-- `hold_inaction` rate — share of rebalance windows that expired
-  without an IC decision.
-- Price-stale entry rate — share of Track B entries where the quote at
-  IC approval differed from the quote at memo generation by more than
-  3% (per §8.4).
-- Response time distribution — how quickly the operator typically
-  responds, by hour buckets.
+**Market backdrop.** The benchmark by month, the price change of the
+universe by market and by sector (local currency, before distributions),
+currencies against the US dollar, and the macro series the platform
+stores. These are reported as observations. The review attributes no cause
+to any market move.
+
+**Quantitative model assessment.** PGain calibration — see §13.3.
+
+*Future enhancement.* Two further assessments are not yet produced: Monte
+Carlo accuracy (how realised returns compared with the simulated
+distribution) and CAPM alpha realisation (whether positions entered with
+positive CAPM alpha outperformed those without).
+
+**Track B operational metrics.** Memo coverage: of the memos Track A
+decided in the period, how many Track B also decided, how many expired in
+its queue undecided (`no_action_timeout`), and how many were still open at
+the period end.
+
+*Future enhancement.* Three further metrics are not yet produced: the
+`hold_inaction` rate, the price-stale entry rate (§8.4) and the
+response-time distribution.
+
+**Platform changes.** The dated changes to platform behaviour that fall in
+the period (§11.4), so that a reader can tell a change in the result from
+a change in the platform that produced it.
 
 Outputs are written to `~/pe-analyst-audit/outcomes/{quarter_id}/` and
 published per §11.4.
 
 ### 13.2  Outcome Metrics
 
-The outcomes report scores each decision on one of three branches,
-determined by the decision's action.
+The outcomes report scores each decision at the period end (§13.1), on one
+of three branches determined by the decision's action.
 
 **Acquire decisions** (`accept_as_proposed`, `accept_with_downgrade`) are
-scored from the position rows they produced:
+scored from the position legs they opened:
 
-- `total_return_usd` — dollar P&L, realised plus unrealised.
-- `total_return_pct` — return on capital deployed at entry.
-- `total_realised_usd` — lifetime realised P&L from `realised_pnl_usd`,
-  which accumulates across trims and close (§8.2).
-- `total_unrealised_usd` — mark-to-market against entry value for legs
-  still open.
-- `excess_vs_benchmark_pct` — return less the benchmark over the same
-  holding window, on both currency bases (§8.7).
-- `disposition` — one of `closed_per_thesis`, `reversed`, `forced`,
-  `manual_or_legacy`, `still_open`.
+- `total_return_usd` — dollar P&L at the period end: realised plus
+  unrealised plus distributions, after costs.
+- `total_return_pct` — that P&L as a percentage of the original cost of
+  the position, before any pro-rating for trims (§8.2).
+- `total_realised_usd` — realised P&L booked up to the period end, across
+  trims and close (§8.2). P&L on a trim of a leg still held is valued from
+  the snapshot stored with the decision, and the total is reconciled to
+  the stored lifetime figure.
+- `total_unrealised_usd` — mark-to-market of the legs still open at the
+  period end, at that day's close and FX rate, against their cost.
+- `total_distributions_usd` — distributions booked to the legs up to the
+  period end (§8.6).
+- `excess_vs_iaspl_pct` — return less the benchmark's total return in USD
+  over each leg's own holding window. The benchmark's return in GBP over
+  the same window is recorded beside it (§8.7).
+- `disposition` — how the position stood at the period end: one of
+  `closed_per_thesis`, `reversed`, `forced`, `manual_or_legacy`,
+  `still_open`.
+
+An accept that opened no leg is not scored for return. It is recorded as
+`no_trade_required` when the name was already held at or above the target
+weight, and as `not_executed` when the target was above the weight held
+and no purchase was booked.
 
 **Non-acted decisions** (`reject`, `hold`, `hold_inaction`) are scored as
-counterfactuals: what a position taken at `decided_at` and held to period
-end would have returned, computed from price history. Excess return is
-computed identically.
+counterfactuals: the price return, in local currency, from `decided_at` to
+the period end, against the benchmark's price return over the same window.
+A decision with no price within seven days of either date is reported as
+having no data. It is never scored as zero (§8.7).
 
 **Dispose decisions** (`partial_dispose`, `complete_dispose`) are not
 scored separately. They return `attributed_to_acquire`: the disposal's
@@ -1085,10 +1163,29 @@ Calibration is measured through three lenses, computed in parallel against
 the same paired data set.
 
 **Brier score.** Mean squared error between predicted PGain and the binary
-realised outcome (1 if the return was positive, 0 otherwise). The baseline
-is 0.263, established on the Phase 02 validation set. This is the headline
-number for governance review. The reported `baseline_gap` is
-`brier − baseline`, so **a positive gap is worse**.
+outcome (1 if the return was positive, 0 otherwise). A lower score is
+better. Two reference points are reported beside it: 0.25, the score of
+always predicting 50%, and the score of always predicting the period's own
+hit rate.
+
+The earlier text compared the score with a baseline of 0.263 "established
+on the Phase 02 validation set". That figure was a validation-set
+prediction error, not a Brier score measured on this basis, and the
+comparison is withdrawn. No baseline is claimed until one can be measured
+on matured predictions.
+
+**Horizon.** PGain is the probability of a positive return over the
+twelve-month simulation horizon (§3.2). A prediction is matured once
+twelve months have passed since its decision. Until then its outcome is
+read at the period end and the result is marked interim: an early
+reading, not a calibration test. The number of matured predictions is
+reported.
+
+**Population and outcome.** The predictions scored are the memos Track A
+decided in the period. For a memo Track A bought, the outcome is positive
+when the position's total return at the period end is above zero (§13.2);
+for a memo it rejected, when the counterfactual price return is. Hit rates
+are reported separately for the two groups.
 
 **Bucket calibration.** Predictions are partitioned into ten PGain deciles.
 For each decile, the realised hit rate is compared against the bucket
@@ -1116,9 +1213,10 @@ cap-breach audit (§13.5).
 
 **Exclusions.** Decisions without a memo (rebalance, cap resolution) carry
 no PGain and are skipped. Acted decisions whose position resolved with no
-usable market data are skipped. Any prediction record whose `decision_id`
-has no matching row in the decisions table is excluded as an orphan, and
-the excluded count is reported rather than silently absorbed.
+usable market data are skipped, as are accepts that opened no leg (§13.2).
+Any prediction record whose `decision_id` has no matching row in the
+decisions table is excluded as an orphan, and the excluded count is
+reported rather than silently absorbed.
 
 *Future enhancement.* Calibration with vintage discipline — point-in-time
 macro and fundamentals locked to the historical `as_of` rather than current
@@ -1135,17 +1233,23 @@ by `memo_id`.
 
 Classifications:
 
-- `aligned` — both tracks act, same action, same executed size.
+- `aligned` — both tracks take the same action at the same executed size
+  (within 0.05 percentage points), including where both reject.
 - `pure_reject` — A accepts, B rejects.
+- `pure_accept_b_only` — A rejects, B accepts.
 - `size_reduction` — both accept, B chooses a smaller executed size.
 - `size_increase` — both accept, B chooses a larger executed size.
-- `expiration` — A acts, B does not decide within the 24-hour window.
-- `pure_accept_b_only` — B acts, A did not. Anomalous; rare.
 
-For each override, the counterfactual is computed from the Track A
-position's outcome (the world in which the IC did not override) against the
-Track B outcome or counterfactual (the world in which the override stood).
-The delta is that override's contribution to Track B's relative performance.
+A memo that Track A decided and Track B did not is not a divergence. It is
+reported under memo coverage (§13.1): expired in the queue undecided
+(§7.4), or still open at the period end.
+
+Each divergence is measured in USD, at the period end, as each track's P&L
+on the positions the memo opened (§13.2), with zero for a track that did
+not buy. Track B's figure less Track A's is that divergence's contribution
+to Track B's relative performance. The report states both figures and
+which track came out ahead: by class, by market and in total. A pair is
+reported in the period of the later of its two decisions.
 
 Published analysis includes the cases where the operator's judgement was
 wrong in retrospect. Selective publication of successful overrides is not
@@ -1176,6 +1280,10 @@ For the period, the audit reports:
   conflating them with genuine capital constraints would overstate how
   often the caps bind.
 
+The audit is published in `report.json` under `cap_audit`. The rendered
+report states how many decisions named a binding constraint; the breakdown
+is carried in the post at the operator's discretion (§11.4).
+
 ### 13.6  Agent Iteration and Prompt Versioning
 
 The platform runs five versioned LLM system prompts across four agent
@@ -1203,8 +1311,9 @@ The correct outcome of a quarter's review may be zero bumps.**
 
 Bump triggers — any one is sufficient:
 
-- Brier score crosses ±0.05 from the 0.263 baseline across two consecutive
-  quarters.
+- *Suspended.* The Brier trigger referred to the 0.263 baseline withdrawn
+  in §13.3. It is suspended until a baseline is measured on matured
+  predictions, and will be restated by amendment (§11.5).
 - One IC override class is consistently additive across four consecutive
   quarters in the same market or sector.
 - A cap binds in more than 80% of weeks in a single market across a
@@ -1242,8 +1351,9 @@ is quietly dropped, and neither is dressed up as something it is not.
 
 ### 13.8  Model Assignment Review
 
-The platform operates `claude-sonnet-4-6` as the default model across
-all agents. The `llm_complete` interface supports a per-call `model=`
+The platform operates one default model across all agents:
+`claude-sonnet-5-5` from 11 October 2026, and `claude-sonnet-4-6` before
+that date. The `llm_complete` interface supports a per-call `model=`
 override.
 
 *Future enhancement.* A model-assignment review evaluates whether
