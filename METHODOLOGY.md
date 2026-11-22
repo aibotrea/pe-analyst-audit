@@ -413,12 +413,87 @@ the GP or IC has four options:
    at conviction-implied target. `dispose_list` entries carry
    `reason_class = make_room`. Track B only — the GP equivalent is the
    Phase A → Phase B → Phase C iterative subtractive flow within the
-   batch evaluator.
+   batch evaluator, subject to the cost-to-trade test (§5.1).
 4. **Defer.** Track B may return the memo to the queue. Track A's batch
    does not defer; it produces a decision per memo or records a
    validation failure.
 
 Below the conviction-1 floor (1%), the action is `reject_capacity`.
+
+### 5.1  Cost-to-Trade Test (Track A)
+
+*In force from 22 November 2026 (UTC).* When the purchases the GP accepts
+in a cycle would breach a cap, the batch evaluator proposes sales to
+restore compliance. A sale of a name bought in the same cycle is netted
+against its purchase and costs nothing. A sale of a name held before the
+cycle, made so that a new purchase can stand, is a switch: 25 basis points
+to sell and 25 to buy (§1.4), 50 basis points of the amount switched.
+
+A switch stands only if it passes a test computed in code. The model
+proposes which holding to sell. It does not apply the test and cannot
+waive it.
+
+**The test.** Let A be the holding proposed for sale and B the purchase it
+would fund.
+
+```
+the sale of A stands only if   rel(B) − rel(A)  >  2.5 points a year
+```
+
+`rel(x)` is the expected return of x less the median expected return of
+its market. Expected return is the 12-month, local-currency figure from
+the quantitative chain of the name's latest reviewer-approved memo. The
+market median is taken over the latest reviewer-approved memo of every
+name in that market at the cycle date; where a market has fewer than three
+such names, the median across all markets is used. Names are compared with
+their own market first because expected return is a local-currency figure
+and its level differs between markets.
+
+**The hurdle.** The general form is
+
+```
+hurdle = m + 2c × 365 / H
+```
+
+where `2c` is the 0.50% cost of the switch, `H` the planned holding period
+in days and `m` an allowance for estimation error, in points a year. `H`
+is set at 365 days, the horizon of the memos, and `m` at 2.0 points, which
+gives 2.5. The allowance was set against measurement: between successive
+memos on the same name the expected-return estimate moved by a median of
+0.9 points, and the changes had a standard deviation of 1.5 points (446
+pairs, July to November 2026). A gap smaller than the allowance cannot be
+told apart from that movement. A gap equal to the hurdle fails.
+
+**No current view of the holding.** If the holding has no
+reviewer-approved memo, or its latest is more than 30 days old at the
+cycle date, the test fails and the holding is kept.
+
+**Pairing.** Each proposed sale is tested against the weakest surviving
+purchase among those that add weight to a cap the sale would ease: the
+one with the lowest market-relative expected return. If the test fails,
+that purchase is rejected and the test is repeated against the next
+weakest. A sale that is still needed for compliance when no purchase is
+left to reject stands untested, because the caps above are hard limits. A
+proposed sale that compliance does not need is dropped.
+
+**Scope.** The test applies to cap-resolution sales only. Disposals in the
+weekly rebalance (§9.1) are exits on the thesis and are not tested. Track B
+is not subject to the test; the operator decides.
+
+**Recording.** A purchase blocked by the test is recorded as a `reject`
+with `reason_class = reject_capacity`. Its reason text states the
+comparison, or why none could be made. The outcome of every test is stored
+with the cycle in the platform database; it is not published in this
+repository.
+
+**What the test is not.** It compares two estimates. It is not a forecast,
+and the hurdle is a policy setting. Its effect is read each quarter
+against 2026Q3 from three figures the quarterly review already reports
+(§13.1): transaction charges as a share of opening NAV, the holding period
+of positions sold, and turnover.
+
+*Future enhancement.* The review does not yet report the return on the
+holdings the test kept against the purchases it blocked.
 
 ---
 
@@ -437,7 +512,7 @@ persisted to the `decisions` SQLite table.
 | memo_triggered_b | B | Specialist memo (reviewer-approved) | Per-memo IC decision via queue |
 | rebalance_a | A | Weekly Track A rebalance batch | Sunday 19:00 SGT cycle |
 | rebalance_b | B | Per-position 24h Track B window | Operator decides each via IC CLI |
-| cap_resolution_a | A | GP subtractive iteration during batch | Trim other holdings to clear caps for new accepts |
+| cap_resolution_a | A | GP subtractive iteration during batch | Trim other holdings to clear caps for new accepts, subject to §5.1 |
 
 ### 6.2  Actions
 
@@ -467,7 +542,7 @@ Reason class is required on every decision. The vocabulary is fixed:
 | downgrade_judgement | accept_with_downgrade (judgement-driven; `binding_constraint` must be null) |
 | reject_thesis_disagreement | reject |
 | reject_better_alternative | reject |
-| reject_capacity | reject (below conviction-1 floor after ceiling) |
+| reject_capacity | reject (below conviction-1 floor after ceiling, or no capacity can be made for the purchase: §5.1) |
 | reject_other | reject |
 | invalidation_triggered | partial_dispose, complete_dispose (rebalance) |
 | thesis_decay | partial_dispose, complete_dispose (rebalance) |
@@ -529,8 +604,12 @@ Triggers (priority order):
 
 1. Filing-event arrival for a held position → ticker queued for the
    next morning's specialist batch.
-2. Held position with no memo refresh in the last **21 days** → forced
-   refresh queued.
+2. Held position with no reviewer-approved memo in the last **21 days**
+   → forced refresh queued. From 22 November 2026 a memo that failed
+   review does not count as a refresh; the name is retried once the
+   minimum interval (§7.2) allows. Before that date a failed memo reset
+   the 21 days, and a held name could go more than a month without a
+   usable memo.
 3. Filing-event arrival for an unheld universe ticker → queued.
 4. Unheld universe ticker with no memo refresh in the last **90 days**
    → forced refresh queued.
@@ -1025,6 +1104,12 @@ already made to the platform and recorded in `platform_changes.json`: the
 minimum interval between memos (§7.2), the Japan trading unit (§8.3) and
 the default model (§13.8).
 
+*Amended for the platform changes of 22 November 2026.* §5.1 is new, and
+§5, §6.1, §6.3, §7.1 and §13.6 were revised with it. The changes took
+effect on 22 November 2026 (UTC) and are recorded in
+`platform_changes.json`. The date this text was committed is in the
+repository history.
+
 ### 13.1  Quarterly Review
 
 **Quarter definition.** Quarters follow the calendar: Q1 (Jan–Mar), Q2
@@ -1292,8 +1377,8 @@ to version.
 
 | Agent role | Prompt | Env var | Default |
 |---|---|---|---|
-| GP (per-memo) | `GP_PHASE_A_PROMPT` | `GP_PHASE_A_VERSION` | `v1` |
-| GP (cap resolution) | `GP_PHASE_C_PROMPT` | `GP_PHASE_C_VERSION` | `v1` |
+| GP (per-memo) | `GP_PHASE_A_PROMPT` | `GP_PHASE_A_VERSION` | `v2` |
+| GP (cap resolution) | `GP_PHASE_C_PROMPT` | `GP_PHASE_C_VERSION` | `v2` |
 | Specialist (equity REIT) | `EQUITY_REIT_SYSTEM_PROMPT` | `SPECIALIST_PROMPT_VERSION` | `v1` |
 | Memo reviewer | `REVIEWER_SYSTEM_PROMPT` | `REVIEWER_PROMPT_VERSION` | `v1` |
 | Track A rebalance | `REBALANCE_A_SYSTEM` | `REBALANCE_PROMPT_VERSION` | `v1` |
@@ -1303,6 +1388,20 @@ require a bump to the other. Every decision logged carries the
 `prompt_version` active at decision time. Track B decisions carry the
 constant `ic_interface_v1` — an interface vintage, not an LLM prompt
 vintage, since no LLM sits in the Track B decide loop.
+
+Before 22 November 2026 the field was not stored: a defect left it out of
+the database write, so decisions made before that date carry no prompt
+version. Only v1 of each prompt existed in that period.
+
+**GP v2, 22 November 2026.** Trigger: the 2026Q3 review, in which Track A
+paid 2.33% of opening NAV in transaction charges and sold positions after
+a median of 11 days, against research with a 12-month horizon. Change: the
+Phase A and Phase C prompts state the cost of trading and describe the
+cost-to-trade test (§5.1), and Phase C is shown each holding's
+market-relative expected return and the age of its memo. Output formats
+are unchanged, and the test itself is applied in code. Expected effect:
+fewer cap-resolution switches, lower charges and longer holding periods.
+Baseline: v1.
 
 Vintage bumps are at most quarterly. Each is documented with its trigger,
 the change, the expected effect, and the baseline prompt version against

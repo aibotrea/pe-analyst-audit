@@ -51,5 +51,41 @@
       "A",
       "B"
     ]
+  },
+  {
+    "date": "2026-11-22",
+    "title": "Cost-to-trade test on Track A switches",
+    "summary": "When a Track A cycle's purchases breached a cap, a holding could be sold to make room whatever the difference in expected return, at a cost of 0.5% of the amount switched. A sale of a holding to fund a new purchase now stands only if the purchase's expected return, measured against its own market, exceeds the holding's by more than 2.5 points a year (METHODOLOGY 5.1). Otherwise the purchase is rejected and the holding kept. The Track A prompts were updated to describe the rule.",
+    "tracks": [
+      "A"
+    ],
+    "split_activity": true
+  },
+  {
+    "date": "2026-11-22",
+    "title": "Held names refreshed from their last reviewed memo",
+    "summary": "A held name is due a new memo 21 days after its last. A memo that failed review counted as a refresh, so a name whose memos kept failing could go more than a month without a usable one. The 21 days now run from the last memo that passed review.",
+    "tracks": [
+      "A",
+      "B"
+    ]
+  },
+  {
+    "date": "2026-11-22",
+    "title": "Memo format check accepts a scenario labelled 'id'",
+    "summary": "Some analyst outputs since October labelled each scenario 'id' where the memo format requires 'name', and were discarded before review. 29 outputs failed the format check from October to 21 November, most of them for this reason. They are now read. The analyst's instructions are unchanged.",
+    "tracks": [
+      "A",
+      "B"
+    ]
+  },
+  {
+    "date": "2026-11-22",
+    "title": "Prompt version recorded with each decision",
+    "summary": "Each decision was meant to carry the version of the prompt it was made under. A defect left the field empty on every decision before this date. It is now recorded. Only the first version of each prompt existed before this date.",
+    "tracks": [
+      "A",
+      "B"
+    ]
   }
 ]
