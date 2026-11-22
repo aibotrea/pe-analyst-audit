@@ -1,0 +1,27 @@
+# Track A Decision — JYEU.SI
+
+**Decision ID**: `A_rebalance_a_JYEU_SI_20261122_110309_aaa15bd0`
+**Flow context**: rebalance_a
+**Decided at**: 2026-11-22T11:03:09.091355+00:00
+**Decided by**: gp
+**Rebalance run**: `rebal_a_2026-11-22`
+
+## Action
+
+- **Action**: `hold`
+
+## Reasoning
+
+**Reason class**: `hold_thesis_intact`
+
+Blended PnL of -2.18% is within normal volatility for a 32-day-old position. No invalidation trigger. Weight is 2.95%. Hold.
+
+## Post-Decision Exposures
+
+- Total invested: 94.59%
+- Country: `{"Singapore": 27.11, "Australia": 33.95, "HongKong": 8.78, "Japan": 24.75}`
+- Sector: `{"Healthcare": 3.0, "Diversified": 27.67, "Data Centre": 3.05, "Industrial/Logistics": 19.9, "Retail": 21.45, "Hospitality": 4.55, "Residential": 8.96, "Office": 6.01}`
+
+---
+
+*Record of a simulated portfolio from a personal research project. No money is invested and no orders are placed. Not investment advice, and not a recommendation to buy, sell or hold any security. Produced in whole or in part by AI language models and may contain errors. The views are the author's own and not those of any employer. See README.md in this repository.*
