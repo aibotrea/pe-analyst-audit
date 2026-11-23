@@ -87,5 +87,14 @@
       "A",
       "B"
     ]
+  },
+  {
+    "date": "2026-11-23",
+    "title": "A memo marked \"revise\" at review is revised once and reviewed again",
+    "summary": "A memo the reviewer marks \"revise\" is now revised once by the analyst, in words only, and reviewed again; only \"reject\" fails. Conviction, the gates and every number are restored in code after the revision. Before, \"revise\" failed the memo and nothing was returned to the analyst: 37 of 548 memos had failed review (METHODOLOGY 7.3).",
+    "tracks": [
+      "A",
+      "B"
+    ]
   }
 ]

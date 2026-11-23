@@ -154,6 +154,16 @@ standards calibrate against accumulated IC override patterns over time.
 Reviewer approval is not an investment recommendation; investment
 judgement is the responsibility of the GP (Track A) and IC (Track B).
 
+From 23 November 2026 the reviewer separates what it draws from prior IC
+feedback into two kinds. A gap in the memo that the feedback exposes (a
+risk not covered, a scenario not modelled, a claim not explained) is
+reported as an issue with the memo, without attribution. The IC's
+investment views (whether to own a name, how large a position should be,
+which names or sectors it prefers) are listed apart and are never passed
+to the analyst. A memo revised under §7.3 can therefore close a gap that
+IC feedback exposed. It does not carry the IC's view of the name into the
+memo that Track A reads.
+
 Architectural segregation is enforced two ways:
 
 1. Static AST analysis. Track A code (`agents/gp/`) may not import from
@@ -626,14 +636,63 @@ new memo until seven days after its last, whichever trigger applies.
 Before that date a new filing could trigger a fresh memo on the same name
 on consecutive days, which crowded other names out of the daily cap.
 
-### 7.3  Memo Distribution
+### 7.3  Memo Review and Distribution
 
-Each generated memo passes the two-layer reviewer (mechanical then
-semantic). Reviewer-approved memos are written to the `analyst_outputs`
-ChromaDB collection and automatically enqueued to the Track B memo
-queue. Track A's GP batch evaluator reads reviewer-approved memos from
-`analyst_outputs` (cross-referenced against the `decisions` table to
-exclude already-decided memos) on each cycle.
+Each generated memo passes the two-layer reviewer. The mechanical layer
+is deterministic, and a memo that fails it goes no further. The semantic
+layer returns one of three verdicts: `approve`, `revise` or `reject`.
+
+*In force from 23 November 2026 (UTC).*
+
+- `approve`: the memo passes.
+- `reject`: the memo fails. It is not revised. A verdict that cannot be
+  read also fails the memo.
+- `revise`: the analyst revises the memo once, with the reviewer's issues
+  and suggestions in front of it, and the revised memo is reviewed again.
+  On the second review `approve` and `revise` both pass and `reject`
+  fails. There is no second revision.
+
+**The revision changes words only.** The analyst may rewrite the thesis,
+the risks, the invalidation condition and the wording of its assumptions
+and scenarios. It has no tools and no new data. The conviction score, its
+label and target weight, every qualitative gate, the quantitative chain
+and every number in the assumptions and scenarios are restored in code
+from the original memo after the analyst replies, so a revision cannot
+change them. Conviction is set once, by the quantitative chain and the
+gates (§4.3).
+
+**A revision that cannot be used is discarded.** That is a revision that
+breaks the memo schema or fails the mechanical layer, cannot be read,
+refers to the review or to the IC, or whose second review cannot be read.
+The original memo then stands and passes, carrying the first review's
+notes.
+
+**A memo that passes on `revise` carries the reviewer's reservations.**
+The reviewer's verdict, scores and issues are stored with the memo in the
+platform database and shown to the IC before it decides. They are not
+part of the memo and are not published in this repository. The GP is
+given the memo, not the notes. Whether a memo's conviction is warranted
+by its evidence is a judgement for the GP and the IC (§2.1). The reviewer
+records its view and does not decide the question.
+
+**The revised memo replaces the original.** It has its own `memo_id`, is
+the memo both tracks receive and is the memo published with any decision.
+The original is kept in the platform database, marked as superseded, and
+is neither distributed nor published. A revision is not a new memo for
+the daily cap or the minimum interval (§7.2).
+
+**"Reviewer-approved"**, wherever this document uses the term, means a
+memo that passed review under the rule in force when it was reviewed.
+
+Before 23 November 2026 only `approve` passed, a `revise` verdict failed
+the memo, and nothing was returned to the analyst. Of 548 memos stored to
+that date, 37 failed review: 8 of 359 from July to September and 29 of
+189 from October.
+
+A memo that passes is enqueued to the Track B memo queue. Track A's GP
+batch evaluator reads passed memos from the `analyst_outputs` ChromaDB
+collection (cross-referenced against the `decisions` table to exclude
+already-decided memos) on each cycle.
 
 ### 7.4  Memo Expiry (Track B)
 
@@ -1110,6 +1169,11 @@ effect on 22 November 2026 (UTC) and are recorded in
 `platform_changes.json`. The date this text was committed is in the
 repository history.
 
+*Amended for the platform change of 23 November 2026.* §7.3 was rewritten,
+and §2.1 and §13.6 were revised with it. The change took effect on
+23 November 2026 (UTC) and is recorded in `platform_changes.json`. The
+date this text was committed is in the repository history.
+
 ### 13.1  Quarterly Review
 
 **Quarter definition.** Quarters follow the calendar: Q1 (Jan–Mar), Q2
@@ -1371,7 +1435,7 @@ is carried in the post at the operator's discretion (§11.4).
 
 ### 13.6  Agent Iteration and Prompt Versioning
 
-The platform runs five versioned LLM system prompts across four agent
+The platform runs six versioned LLM system prompts across four agent
 roles. The Track B main decide flow is human-driven and has no LLM prompt
 to version.
 
@@ -1380,14 +1444,17 @@ to version.
 | GP (per-memo) | `GP_PHASE_A_PROMPT` | `GP_PHASE_A_VERSION` | `v2` |
 | GP (cap resolution) | `GP_PHASE_C_PROMPT` | `GP_PHASE_C_VERSION` | `v2` |
 | Specialist (equity REIT) | `EQUITY_REIT_SYSTEM_PROMPT` | `SPECIALIST_PROMPT_VERSION` | `v1` |
-| Memo reviewer | `REVIEWER_SYSTEM_PROMPT` | `REVIEWER_PROMPT_VERSION` | `v1` |
+| Specialist (revision after review) | `REVISION_SYSTEM_PROMPT` | `REVISION_PROMPT_VERSION` | `v1` |
+| Memo reviewer | `REVIEWER_SYSTEM_PROMPT` | `REVIEWER_PROMPT_VERSION` | `v2` |
 | Track A rebalance | `REBALANCE_A_SYSTEM` | `REBALANCE_PROMPT_VERSION` | `v1` |
 
 GP Phase A and Phase C are versioned independently: a bump to one does not
 require a bump to the other. Every decision logged carries the
 `prompt_version` active at decision time. Track B decisions carry the
 constant `ic_interface_v1` — an interface vintage, not an LLM prompt
-vintage, since no LLM sits in the Track B decide loop.
+vintage, since no LLM sits in the Track B decide loop. The reviewer and
+revision prompt versions are stored with each memo's review record in the
+platform database.
 
 Before 22 November 2026 the field was not stored: a defect left it out of
 the database write, so decisions made before that date carry no prompt
@@ -1402,6 +1469,22 @@ market-relative expected return and the age of its memo. Output formats
 are unchanged, and the test itself is applied in code. Expected effect:
 fewer cap-resolution switches, lower charges and longer holding periods.
 Baseline: v1.
+
+**Reviewer v2 and revision v1, 23 November 2026.** Trigger: memos lost at
+review. Review failures rose from 8 of 359 memos in July to September to
+29 of 189 from October to 23 November, and each failed memo was discarded
+with nothing returned to the analyst. In 77 reviews run on 23 November, on
+original and revised memos, the reviewer returned `approve` or `revise`
+and never `reject`. Change: the reviewer prompt gains one section, which
+separates the points it draws from prior IC feedback (§2.1) and adds a
+field for the IC's views to its output. Its criteria, scores and verdict
+definitions are unchanged. The revision prompt is new. The single
+revision, the restoring of the fixed fields and the pass rule (§7.3) are
+applied in code. Expected effect: fewer memos lost at review, and no
+change in conviction from the revision. Tested before deployment on ten
+memos that had failed review: none failed under the new rule; seven were
+revised once, and four of the seven were then approved on both of two
+further reviews. Baseline: reviewer v1.
 
 Vintage bumps are at most quarterly. Each is documented with its trigger,
 the change, the expected effect, and the baseline prompt version against
