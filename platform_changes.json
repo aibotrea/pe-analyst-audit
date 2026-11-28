@@ -96,5 +96,13 @@
       "A",
       "B"
     ]
+  },
+  {
+    "date": "2026-11-28",
+    "title": "Track B decision records: country and sector weights after make-room sales",
+    "summary": "Decisions that sell part or all of a holding to make room for a purchase now record country and sector weights after the sale. Earlier records overstated those two weights; see corrections/2026-11-28-ic-post-decision-exposures.md. Holdings and performance were not affected.",
+    "tracks": [
+      "B"
+    ]
   }
 ]
